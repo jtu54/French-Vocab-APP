@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { ControlPanel } from "@/components/ControlPanel";
 import { Pagination } from "@/components/Pagination";
 import { VerbModal } from "@/components/VerbModal";
 import { WordCard } from "@/components/WordCard";
 import { buildDailyDeck, buildVault, PAGE_SIZE, updateWordProgress } from "@/lib/srs";
+import { getAvailableSourceOptions } from "@/lib/vocabulary";
 import {
   DEFAULT_SETTINGS,
   loadProgress,
@@ -51,15 +52,22 @@ export function FrenchLearningApp({ initialWords }: FrenchLearningAppProps) {
     saveProgress(progressById);
   }, [hydrated, progressById]);
 
-  const dailyDeck = buildDailyDeck(initialWords, progressById, settings);
-  const vaultDeck = buildVault(initialWords, progressById, settings);
+  const availableSources = useMemo(() => getAvailableSourceOptions(initialWords), [initialWords]);
+  const dailyDeck = useMemo(
+    () => buildDailyDeck(initialWords, progressById, settings),
+    [initialWords, progressById, settings]
+  );
+  const vaultDeck = useMemo(
+    () => buildVault(initialWords, progressById, settings),
+    [initialWords, progressById, settings]
+  );
   const activeDeck = view === "daily" ? dailyDeck.cards : vaultDeck;
   const totalPages = Math.max(1, Math.ceil(activeDeck.length / PAGE_SIZE));
   const visibleCards = activeDeck.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [settings, view, dailyDeck.cards.length, vaultDeck.length]);
+  }, [view, settings.sourceList, settings.wordsPerDay, settings.alphabeticalSort, dailyDeck.cards.length, vaultDeck.length]);
 
   useEffect(() => {
     if (currentPage > totalPages) {
@@ -76,6 +84,7 @@ export function FrenchLearningApp({ initialWords }: FrenchLearningAppProps) {
 
   function handleStartQuiz() {
     setView("daily");
+    setCurrentPage(1);
     gridRef.current?.scrollIntoView({
       behavior: "smooth",
       block: "start"
@@ -100,6 +109,7 @@ export function FrenchLearningApp({ initialWords }: FrenchLearningAppProps) {
 
         <section className="mt-8">
           <ControlPanel
+            availableSources={availableSources}
             settings={settings}
             view={view}
             onSettingsChange={setSettings}

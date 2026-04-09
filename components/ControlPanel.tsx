@@ -3,6 +3,7 @@
 import type { LearnerSettings, SourceList } from "@/types/vocab";
 
 interface ControlPanelProps {
+  availableSources: SourceList[];
   settings: LearnerSettings;
   view: "daily" | "vault";
   onSettingsChange: (next: LearnerSettings) => void;
@@ -11,9 +12,9 @@ interface ControlPanelProps {
 }
 
 const WORD_OPTIONS = [5, 10, 20, 25, 40, 50, 75, 100];
-const SOURCE_OPTIONS: SourceList[] = ["All Sources", "Textbook", "Dictionary"];
 
 export function ControlPanel({
+  availableSources,
   settings,
   view,
   onSettingsChange,
@@ -69,7 +70,7 @@ export function ControlPanel({
                 })
               }
             >
-              {SOURCE_OPTIONS.map((value) => (
+              {availableSources.map((value) => (
                 <option key={value} value={value}>
                   {value}
                 </option>

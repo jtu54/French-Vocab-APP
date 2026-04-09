@@ -1,5 +1,7 @@
 import type { LearnerSettings, WordProgress } from "@/types/vocab";
 
+import { normalizeSourceListValue } from "@/lib/vocabulary";
+
 export const PROGRESS_STORAGE_KEY = "violet-french-progress";
 export const SETTINGS_STORAGE_KEY = "violet-french-settings";
 
@@ -37,9 +39,15 @@ export function loadSettings(): LearnerSettings {
 
   try {
     const stored = window.localStorage.getItem(SETTINGS_STORAGE_KEY);
-    return stored
-      ? { ...DEFAULT_SETTINGS, ...(JSON.parse(stored) as Partial<LearnerSettings>) }
-      : DEFAULT_SETTINGS;
+    if (!stored) {
+      return DEFAULT_SETTINGS;
+    }
+
+    const parsed = { ...DEFAULT_SETTINGS, ...(JSON.parse(stored) as Partial<LearnerSettings>) };
+    return {
+      ...parsed,
+      sourceList: normalizeSourceListValue(parsed.sourceList)
+    };
   } catch {
     return DEFAULT_SETTINGS;
   }
@@ -50,5 +58,11 @@ export function saveSettings(settings: LearnerSettings) {
     return;
   }
 
-  window.localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settings));
+  window.localStorage.setItem(
+    SETTINGS_STORAGE_KEY,
+    JSON.stringify({
+      ...settings,
+      sourceList: normalizeSourceListValue(settings.sourceList)
+    })
+  );
 }

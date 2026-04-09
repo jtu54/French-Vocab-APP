@@ -6,6 +6,8 @@ import type {
   WordProgress
 } from "@/types/vocab";
 
+import { matchesSelectedSource } from "@/lib/vocabulary";
+
 export const EBBINGHAUS_INTERVALS = [1, 2, 4, 7, 15, 30] as const;
 export const PAGE_SIZE = 25;
 
@@ -82,16 +84,27 @@ export function formatReviewDate(progress?: WordProgress) {
   }).format(new Date(progress.nextReviewAt));
 }
 
-function matchesSource(word: VocabularyWord, source: LearnerSettings["sourceList"]) {
-  return source === "All Sources" || word.source === source;
-}
-
 function sortWords(words: VocabularyWord[], alphabetical: boolean) {
   if (!alphabetical) {
     return words;
   }
 
   return [...words].sort((left, right) => getDisplayFrench(left).localeCompare(getDisplayFrench(right)));
+}
+
+export function getNextWords(
+  words: VocabularyWord[],
+  progressById: Record<string, WordProgress>,
+  settings: LearnerSettings,
+  excludedWordIds = new Set<string>()
+) {
+  return sortWords(
+    words.filter((word) => matchesSelectedSource(word, settings.sourceList)),
+    settings.alphabeticalSort
+  )
+    .filter((word) => !isLearned(progressById[word.id]))
+    .filter((word) => !excludedWordIds.has(word.id))
+    .slice(0, settings.wordsPerDay);
 }
 
 export function buildDailyDeck(
@@ -101,7 +114,7 @@ export function buildDailyDeck(
   now = new Date()
 ): DeckSummary {
   const filteredWords = sortWords(
-    words.filter((word) => matchesSource(word, settings.sourceList)),
+    words.filter((word) => matchesSelectedSource(word, settings.sourceList)),
     settings.alphabeticalSort
   );
 
@@ -113,10 +126,8 @@ export function buildDailyDeck(
       progress: progressById[word.id]
     }));
 
-  const newCards: DailyDeckEntry[] = filteredWords
-    .filter((word) => !isLearned(progressById[word.id]))
-    .filter((word) => !reviewCards.some((entry) => entry.word.id === word.id))
-    .slice(0, settings.wordsPerDay)
+  const excludedWordIds = new Set(reviewCards.map((entry) => entry.word.id));
+  const newCards: DailyDeckEntry[] = getNextWords(words, progressById, settings, excludedWordIds)
     .map((word) => ({
       word,
       kind: "new",
@@ -132,7 +143,7 @@ export function buildDailyDeck(
 
 export function buildVault(words: VocabularyWord[], progressById: Record<string, WordProgress>, settings: LearnerSettings) {
   const filteredWords = sortWords(
-    words.filter((word) => matchesSource(word, settings.sourceList)),
+    words.filter((word) => matchesSelectedSource(word, settings.sourceList)),
     settings.alphabeticalSort
   );
 

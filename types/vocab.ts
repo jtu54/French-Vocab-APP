@@ -1,4 +1,9 @@
-export type SourceList = "All Sources" | "Textbook" | "Dictionary";
+export type LegacyVocabularySource = "Textbook" | "Dictionary";
+export type VocabularySource =
+  | "Lexique (Common French)"
+  | "Lefff (Comprehensive)"
+  | "Collins Essential";
+export type SourceList = "All Sources" | VocabularySource | LegacyVocabularySource;
 export type PartOfSpeech = "noun" | "adjective" | "verb" | "phrase";
 export type Auxiliary = "AVOIR" | "ETRE";
 export type ReviewState = "new" | "review";
@@ -15,7 +20,7 @@ export interface VocabularyWord {
   french: string;
   english: string;
   partOfSpeech: PartOfSpeech;
-  source: Exclude<SourceList, "All Sources">;
+  source: VocabularySource | LegacyVocabularySource;
   article?: "un" | "une";
   gender?: "masculine" | "feminine";
   memoryStabilityLevel: number;

@@ -1,6 +1,7 @@
 "use client";
 
 import { formatReviewDate, getDisplayFrench } from "@/lib/srs";
+import { normalizeSourceLabel } from "@/lib/vocabulary";
 import type { DailyDeckEntry, VocabularyWord } from "@/types/vocab";
 
 interface WordCardProps {
@@ -24,7 +25,7 @@ export function WordCard({ entry, showActions, onRateWord, onOpenVerb }: WordCar
         <div className="space-y-2">
           <div className="flex flex-wrap items-center gap-2">
             <span className="rounded-full bg-[#4c301d] px-3 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-[#f8eac4]">
-              {word.source}
+              {normalizeSourceLabel(word.source)}
             </span>
             <span className="rounded-full bg-[#f8ecd0] px-3 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-[#6b4328]">
               {word.partOfSpeech}
