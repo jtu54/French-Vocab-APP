@@ -1,0 +1,64 @@
+export type SourceList = "All Sources" | "Textbook" | "Dictionary";
+export type PartOfSpeech = "noun" | "adjective" | "verb" | "phrase";
+export type Auxiliary = "AVOIR" | "ETRE";
+export type ReviewState = "new" | "review";
+
+export interface VerbMeta {
+  auxiliary?: Auxiliary;
+  pronominal?: boolean;
+  agreeGender?: "M" | "F";
+  agreeNumber?: "S" | "P";
+}
+
+export interface VocabularyWord {
+  id: string;
+  french: string;
+  english: string;
+  partOfSpeech: PartOfSpeech;
+  source: Exclude<SourceList, "All Sources">;
+  article?: "un" | "une";
+  gender?: "masculine" | "feminine";
+  memoryStabilityLevel: number;
+  notes?: string;
+  tags?: string[];
+  verbMeta?: VerbMeta;
+}
+
+export interface WordProgress {
+  stage: number;
+  learnedAt?: string;
+  lastReviewedAt?: string;
+  nextReviewAt?: string;
+  totalReviews: number;
+  recallStrength: number;
+  lastResult?: "remembered" | "forgot";
+}
+
+export interface LearnerSettings {
+  wordsPerDay: number;
+  sourceList: SourceList;
+  alphabeticalSort: boolean;
+}
+
+export interface DailyDeckEntry {
+  word: VocabularyWord;
+  kind: ReviewState;
+  progress?: WordProgress;
+}
+
+export interface DeckSummary {
+  cards: DailyDeckEntry[];
+  reviewCount: number;
+  newCount: number;
+}
+
+export interface ConjugationRow {
+  subject: string;
+  value: string;
+}
+
+export interface ConjugationSection {
+  label: string;
+  rows: ConjugationRow[];
+  note?: string;
+}

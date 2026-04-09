@@ -1,0 +1,140 @@
+[
+  {
+    "id": "pomme",
+    "french": "pomme",
+    "english": "apple",
+    "partOfSpeech": "noun",
+    "source": "Textbook",
+    "article": "une",
+    "gender": "feminine",
+    "memoryStabilityLevel": 0,
+    "notes": "Useful food vocabulary for beginner conversations.",
+    "tags": ["food", "daily-life"]
+  },
+  {
+    "id": "chien",
+    "french": "chien",
+    "english": "dog",
+    "partOfSpeech": "noun",
+    "source": "Dictionary",
+    "article": "un",
+    "gender": "masculine",
+    "memoryStabilityLevel": 1,
+    "tags": ["animals"]
+  },
+  {
+    "id": "maison",
+    "french": "maison",
+    "english": "house",
+    "partOfSpeech": "noun",
+    "source": "Textbook",
+    "article": "une",
+    "gender": "feminine",
+    "memoryStabilityLevel": 0,
+    "tags": ["places"]
+  },
+  {
+    "id": "livre",
+    "french": "livre",
+    "english": "book",
+    "partOfSpeech": "noun",
+    "source": "Dictionary",
+    "article": "un",
+    "gender": "masculine",
+    "memoryStabilityLevel": 2,
+    "tags": ["school"]
+  },
+  {
+    "id": "fleur",
+    "french": "fleur",
+    "english": "flower",
+    "partOfSpeech": "noun",
+    "source": "Textbook",
+    "article": "une",
+    "gender": "feminine",
+    "memoryStabilityLevel": 0,
+    "tags": ["nature"]
+  },
+  {
+    "id": "rapide",
+    "french": "rapide",
+    "english": "fast",
+    "partOfSpeech": "adjective",
+    "source": "Dictionary",
+    "article": "un",
+    "gender": "masculine",
+    "memoryStabilityLevel": 1,
+    "notes": "Displayed with an article for gender anchoring."
+  },
+  {
+    "id": "douce",
+    "french": "douce",
+    "english": "gentle",
+    "partOfSpeech": "adjective",
+    "source": "Textbook",
+    "article": "une",
+    "gender": "feminine",
+    "memoryStabilityLevel": 0
+  },
+  {
+    "id": "manger",
+    "french": "manger",
+    "english": "to eat",
+    "partOfSpeech": "verb",
+    "source": "Textbook",
+    "memoryStabilityLevel": 0,
+    "tags": ["routine", "verbs"],
+    "verbMeta": {
+      "auxiliary": "AVOIR"
+    }
+  },
+  {
+    "id": "aller",
+    "french": "aller",
+    "english": "to go",
+    "partOfSpeech": "verb",
+    "source": "Dictionary",
+    "memoryStabilityLevel": 0,
+    "tags": ["movement", "verbs"],
+    "verbMeta": {
+      "auxiliary": "ETRE",
+      "agreeGender": "F",
+      "agreeNumber": "S"
+    }
+  },
+  {
+    "id": "venir",
+    "french": "venir",
+    "english": "to come",
+    "partOfSpeech": "verb",
+    "source": "Textbook",
+    "memoryStabilityLevel": 1,
+    "tags": ["movement", "verbs"],
+    "verbMeta": {
+      "auxiliary": "ETRE",
+      "agreeGender": "F",
+      "agreeNumber": "S"
+    }
+  },
+  {
+    "id": "parler",
+    "french": "parler",
+    "english": "to speak",
+    "partOfSpeech": "verb",
+    "source": "Dictionary",
+    "memoryStabilityLevel": 0,
+    "tags": ["communication", "verbs"],
+    "verbMeta": {
+      "auxiliary": "AVOIR"
+    }
+  },
+  {
+    "id": "bonjour",
+    "french": "bonjour",
+    "english": "hello",
+    "partOfSpeech": "phrase",
+    "source": "Textbook",
+    "memoryStabilityLevel": 0,
+    "tags": ["greetings"]
+  }
+]
