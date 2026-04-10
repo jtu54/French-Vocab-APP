@@ -6,16 +6,24 @@ import { ControlPanel } from "@/components/ControlPanel";
 import { Pagination } from "@/components/Pagination";
 import { VerbModal } from "@/components/VerbModal";
 import { WordCard } from "@/components/WordCard";
-import { buildDailyDeck, buildVault, PAGE_SIZE, updateWordProgress } from "@/lib/srs";
+import {
+  buildVault,
+  getReviewEntries,
+  loadNextBatch,
+  PAGE_SIZE,
+  updateWordProgress
+} from "@/lib/srs";
 import { getAvailableSourceOptions } from "@/lib/vocabulary";
 import {
   DEFAULT_SETTINGS,
+  loadDailyStudyState,
   loadProgress,
   loadSettings,
+  saveDailyStudyState,
   saveProgress,
   saveSettings
 } from "@/lib/storage";
-import type { VocabularyWord, WordProgress } from "@/types/vocab";
+import type { DailyDeckEntry, VocabularyWord, WordProgress } from "@/types/vocab";
 
 interface FrenchLearningAppProps {
   initialWords: VocabularyWord[];
@@ -28,11 +36,23 @@ export function FrenchLearningApp({ initialWords }: FrenchLearningAppProps) {
   const [selectedVerb, setSelectedVerb] = useState<VocabularyWord | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [hydrated, setHydrated] = useState(false);
+  const [queuedWordIds, setQueuedWordIds] = useState<string[]>([]);
+  const [wordsStudiedToday, setWordsStudiedToday] = useState(0);
+  const [isRefilling, setIsRefilling] = useState(false);
+  const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const gridRef = useRef<HTMLElement | null>(null);
+  const previousSourceListRef = useRef(DEFAULT_SETTINGS.sourceList);
 
   useEffect(() => {
-    setSettings(loadSettings());
-    setProgressById(loadProgress());
+    const nextSettings = loadSettings();
+    const nextProgress = loadProgress();
+    const dailyStudyState = loadDailyStudyState(nextSettings.sourceList);
+
+    setSettings(nextSettings);
+    setProgressById(nextProgress);
+    setQueuedWordIds(dailyStudyState.queuedWordIds);
+    setWordsStudiedToday(dailyStudyState.wordsStudiedToday);
+    previousSourceListRef.current = nextSettings.sourceList;
     setHydrated(true);
   }, []);
 
@@ -53,9 +73,37 @@ export function FrenchLearningApp({ initialWords }: FrenchLearningAppProps) {
   }, [hydrated, progressById]);
 
   const availableSources = useMemo(() => getAvailableSourceOptions(initialWords), [initialWords]);
-  const dailyDeck = useMemo(
-    () => buildDailyDeck(initialWords, progressById, settings),
+  const wordLookup = useMemo(
+    () => new Map(initialWords.map((word) => [word.id, word])),
+    [initialWords]
+  );
+  const reviewEntries = useMemo(
+    () => getReviewEntries(initialWords, progressById, settings),
     [initialWords, progressById, settings]
+  );
+  const queuedNewEntries = useMemo(
+    () =>
+      queuedWordIds
+        .map((wordId) => wordLookup.get(wordId))
+        .filter((word): word is VocabularyWord => Boolean(word))
+        .filter((word) => !progressById[word.id] || progressById[word.id].stage <= 0)
+        .map(
+          (word) =>
+            ({
+              word,
+              kind: "new",
+              progress: progressById[word.id]
+            }) satisfies DailyDeckEntry
+        ),
+    [progressById, queuedWordIds, wordLookup]
+  );
+  const dailyDeck = useMemo(
+    () => ({
+      cards: [...reviewEntries, ...queuedNewEntries],
+      reviewCount: reviewEntries.length,
+      newCount: queuedNewEntries.length
+    }),
+    [queuedNewEntries, reviewEntries]
   );
   const vaultDeck = useMemo(
     () => buildVault(initialWords, progressById, settings),
@@ -75,15 +123,106 @@ export function FrenchLearningApp({ initialWords }: FrenchLearningAppProps) {
     }
   }, [currentPage, totalPages]);
 
+  useEffect(() => {
+    if (!hydrated) {
+      return;
+    }
+
+    saveDailyStudyState({
+      sessionDate: new Date().toISOString(),
+      queuedWordIds,
+      wordsStudiedToday,
+      sourceList: settings.sourceList
+    });
+  }, [hydrated, queuedWordIds, settings.sourceList, wordsStudiedToday]);
+
+  useEffect(() => {
+    if (!hydrated || view !== "daily") {
+      return;
+    }
+
+    if (previousSourceListRef.current !== settings.sourceList) {
+      previousSourceListRef.current = settings.sourceList;
+      setQueuedWordIds([]);
+      setStatusMessage(`Source changed to ${settings.sourceList}. Queue refreshed.`);
+      return;
+    }
+
+    if (queuedWordIds.length === 0) {
+      const nextWords = loadNextBatch(
+        initialWords,
+        progressById,
+        settings,
+        settings.wordsPerDay,
+        []
+      );
+      const nextWordIds = nextWords.map((word) => word.id);
+
+      setQueuedWordIds(nextWordIds);
+      setWordsStudiedToday((current) => current + nextWordIds.length);
+      setStatusMessage(
+        nextWordIds.length > 0
+          ? `${nextWordIds.length} new words added!`
+          : "No more unseen words match this source yet."
+      );
+    }
+  }, [hydrated, initialWords, progressById, queuedWordIds.length, settings, view]);
+
+  useEffect(() => {
+    if (!statusMessage) {
+      return;
+    }
+
+    const timeout = window.setTimeout(() => {
+      setStatusMessage(null);
+    }, 2200);
+
+    return () => window.clearTimeout(timeout);
+  }, [statusMessage]);
+
   function handleRateWord(word: VocabularyWord, remembered: boolean) {
-    setProgressById((current) => ({
-      ...current,
-      [word.id]: updateWordProgress(current[word.id], remembered)
-    }));
+    setProgressById((current) => {
+      const nextProgress = {
+        ...current,
+        [word.id]: updateWordProgress(current[word.id], remembered)
+      };
+
+      saveProgress(nextProgress);
+      return nextProgress;
+    });
+    setQueuedWordIds((current) => current.filter((wordId) => wordId !== word.id));
+  }
+
+  function handleRefillQueue() {
+    setIsRefilling(true);
+
+    const nextWords = loadNextBatch(
+      initialWords,
+      progressById,
+      settings,
+      settings.wordsPerDay,
+      queuedWordIds
+    );
+
+    const nextWordIds = nextWords.map((word) => word.id);
+
+    setQueuedWordIds((current) => [...current, ...nextWordIds]);
+    setWordsStudiedToday((current) => current + nextWordIds.length);
+    setView("daily");
+    setCurrentPage(1);
+    setStatusMessage(
+      nextWordIds.length > 0
+        ? `${nextWordIds.length} new words added!`
+        : "No more unseen words match this source yet."
+    );
+    setIsRefilling(false);
   }
 
   function handleStartQuiz() {
     setView("daily");
+    if (queuedWordIds.length === 0) {
+      handleRefillQueue();
+    }
     setCurrentPage(1);
     gridRef.current?.scrollIntoView({
       behavior: "smooth",
@@ -110,8 +249,10 @@ export function FrenchLearningApp({ initialWords }: FrenchLearningAppProps) {
         <section className="mt-8">
           <ControlPanel
             availableSources={availableSources}
+            isRefilling={isRefilling}
             settings={settings}
             view={view}
+            onRefillQueue={handleRefillQueue}
             onSettingsChange={setSettings}
             onViewChange={setView}
             onStartQuiz={handleStartQuiz}
@@ -124,7 +265,10 @@ export function FrenchLearningApp({ initialWords }: FrenchLearningAppProps) {
               Today&apos;s Words
             </p>
             <p className="mt-2 font-pixel text-sm uppercase leading-6 text-[#fff9e1]">
-              {dailyDeck.cards.length} cards ready
+              {wordsStudiedToday} words studied today
+            </p>
+            <p className="mt-2 text-sm font-semibold text-[#f4e7bf]">
+              {dailyDeck.cards.length} cards ready now
             </p>
           </div>
           <div className="wood-panel pixel-corners rounded-lg p-4">
@@ -144,6 +288,14 @@ export function FrenchLearningApp({ initialWords }: FrenchLearningAppProps) {
             </p>
           </div>
         </section>
+
+        {statusMessage ? (
+          <section className="mt-6">
+            <div className="wood-panel pixel-corners rounded-lg px-4 py-3 text-center text-sm font-bold uppercase tracking-[0.12em] text-[#fff1c8]">
+              <span className={isRefilling ? "animate-pulse" : ""}>{statusMessage}</span>
+            </div>
+          </section>
+        ) : null}
 
         <section ref={gridRef} className="mt-10">
           <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">

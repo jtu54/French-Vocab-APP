@@ -96,6 +96,7 @@ export function getNextWords(
   words: VocabularyWord[],
   progressById: Record<string, WordProgress>,
   settings: LearnerSettings,
+  count = settings.wordsPerDay,
   excludedWordIds = new Set<string>()
 ) {
   return sortWords(
@@ -104,7 +105,44 @@ export function getNextWords(
   )
     .filter((word) => !isLearned(progressById[word.id]))
     .filter((word) => !excludedWordIds.has(word.id))
-    .slice(0, settings.wordsPerDay);
+    .slice(0, count);
+}
+
+export function loadNextBatch(
+  words: VocabularyWord[],
+  progressById: Record<string, WordProgress>,
+  settings: LearnerSettings,
+  count: number,
+  queuedWordIds: string[] = [],
+  now = new Date()
+) {
+  const reviewWordIds = new Set(
+    words
+      .filter((word) => matchesSelectedSource(word, settings.sourceList))
+      .filter((word) => isReviewDue(progressById[word.id], now))
+      .map((word) => word.id)
+  );
+  const excludedWordIds = new Set([...queuedWordIds, ...reviewWordIds]);
+
+  return getNextWords(words, progressById, settings, count, excludedWordIds);
+}
+
+export function getReviewEntries(
+  words: VocabularyWord[],
+  progressById: Record<string, WordProgress>,
+  settings: LearnerSettings,
+  now = new Date()
+) {
+  return sortWords(
+    words.filter((word) => matchesSelectedSource(word, settings.sourceList)),
+    settings.alphabeticalSort
+  )
+    .filter((word) => isReviewDue(progressById[word.id], now))
+    .map((word) => ({
+      word,
+      kind: "review" as const,
+      progress: progressById[word.id]
+    }));
 }
 
 export function buildDailyDeck(
@@ -127,7 +165,13 @@ export function buildDailyDeck(
     }));
 
   const excludedWordIds = new Set(reviewCards.map((entry) => entry.word.id));
-  const newCards: DailyDeckEntry[] = getNextWords(words, progressById, settings, excludedWordIds)
+  const newCards: DailyDeckEntry[] = getNextWords(
+    words,
+    progressById,
+    settings,
+    settings.wordsPerDay,
+    excludedWordIds
+  )
     .map((word) => ({
       word,
       kind: "new",

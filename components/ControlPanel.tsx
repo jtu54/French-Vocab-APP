@@ -4,8 +4,10 @@ import type { LearnerSettings, SourceList } from "@/types/vocab";
 
 interface ControlPanelProps {
   availableSources: SourceList[];
+  isRefilling: boolean;
   settings: LearnerSettings;
   view: "daily" | "vault";
+  onRefillQueue: () => void;
   onSettingsChange: (next: LearnerSettings) => void;
   onViewChange: (view: "daily" | "vault") => void;
   onStartQuiz: () => void;
@@ -15,8 +17,10 @@ const WORD_OPTIONS = [5, 10, 20, 25, 40, 50, 75, 100];
 
 export function ControlPanel({
   availableSources,
+  isRefilling,
   settings,
   view,
+  onRefillQueue,
   onSettingsChange,
   onViewChange,
   onStartQuiz
@@ -110,7 +114,7 @@ export function ControlPanel({
           </div>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid gap-4 md:grid-cols-3">
           <button
             type="button"
             className={`pixel-button pixel-corners rounded-md px-5 py-4 text-sm font-bold text-bark ${
@@ -128,6 +132,14 @@ export function ControlPanel({
             onClick={onStartQuiz}
           >
             Start Daily Quiz
+          </button>
+          <button
+            type="button"
+            className="pixel-button pixel-corners rounded-md px-5 py-4 text-sm font-bold text-bark disabled:cursor-not-allowed disabled:opacity-70"
+            onClick={onRefillQueue}
+            disabled={isRefilling}
+          >
+            {isRefilling ? "Loading..." : "Refill Queue"}
           </button>
         </div>
       </section>

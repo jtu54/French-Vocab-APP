@@ -45,6 +45,13 @@ export interface LearnerSettings {
   alphabeticalSort: boolean;
 }
 
+export interface DailyStudyState {
+  sessionDate: string;
+  queuedWordIds: string[];
+  wordsStudiedToday: number;
+  sourceList: SourceList;
+}
+
 export interface DailyDeckEntry {
   word: VocabularyWord;
   kind: ReviewState;
