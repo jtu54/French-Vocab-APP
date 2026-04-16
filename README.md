@@ -1,5 +1,9 @@
 # Violet's French Learning Path
 
+## 🚧 Work in Progress
+
+This project is currently being developed and refined.
+
 Starter boilerplate for a Next.js + Tailwind vocabulary app with:
 
 - a Stardew-inspired pixel UI
